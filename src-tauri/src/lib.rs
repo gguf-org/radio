@@ -36,43 +36,102 @@ fn binary_name(stem: &str) -> String {
 
 // ── Path resolution ─────────────────────────────────────────────────────────
 
-/// Find the llama-server binary bundled with this app.
-/// Tauri's externalBin places the binary (without target triple) next to the exe
-/// in production. During `tauri dev`, it resolves from the src-tauri/binaries/ dir.
-fn resolve_llama_server(app: &AppHandle) -> Option<PathBuf> {
-    let name = binary_name("llama-server");
+/// Return the target triple that Tauri's externalBin appends to binary names.
+fn current_target_triple() -> &'static str {
+    if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+        "aarch64-apple-darwin"
+    } else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
+        "x86_64-apple-darwin"
+    } else if cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+        "x86_64-unknown-linux-gnu"
+    } else if cfg!(all(target_os = "linux", target_arch = "aarch64")) {
+        "aarch64-unknown-linux-gnu"
+    } else if cfg!(all(target_os = "windows", target_arch = "x86_64")) {
+        "x86_64-pc-windows-msvc"
+    } else if cfg!(all(target_os = "windows", target_arch = "aarch64")) {
+        "aarch64-pc-windows-msvc"
+    } else {
+        "unknown"
+    }
+}
 
-    // 1. resource_dir — where Tauri places externalBin in production bundles
-    if let Ok(dir) = app.path().resource_dir() {
-        let candidate = dir.join(&name);
-        if candidate.exists() {
-            return Some(candidate);
+/// Names to search for, in priority order.
+/// Tauri's externalBin places the binary as `llama-server-{triple}[.exe]` in
+/// the binaries/ dir. Production bundles strip the triple. We try both.
+fn candidate_binary_names() -> [String; 2] {
+    let base = binary_name("llama-server");
+    let with_triple = if cfg!(windows) {
+        format!("llama-server-{}.exe", current_target_triple())
+    } else {
+        format!("llama-server-{}", current_target_triple())
+    };
+    [base, with_triple]
+}
+
+/// Remove macOS quarantine extended attribute so Gatekeeper won't block the spawn.
+#[cfg(target_os = "macos")]
+fn clear_quarantine(path: &Path) {
+    let _ = std::process::Command::new("xattr")
+        .args(["-dr", "com.apple.quarantine", &path.to_string_lossy()])
+        .output();
+}
+#[cfg(not(target_os = "macos"))]
+fn clear_quarantine(_: &Path) {}
+
+/// Ensure the binary has the execute bit on Unix filesystems.
+#[cfg(unix)]
+fn ensure_executable(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    if let Ok(meta) = std::fs::metadata(path) {
+        let mut perms = meta.permissions();
+        let mode = perms.mode();
+        if mode & 0o111 != 0o111 {
+            perms.set_mode(mode | 0o111);
+            let _ = std::fs::set_permissions(path, perms);
         }
     }
+}
+#[cfg(not(unix))]
+fn ensure_executable(_: &Path) {}
 
-    // 2. Same directory as the running exe (production on some platforms)
-    if let Ok(exe) = std::env::current_exe() {
-        if let Some(dir) = exe.parent() {
-            let candidate = dir.join(&name);
+/// Find the llama-server binary bundled with this app.
+/// Tries both the plain name (`llama-server[.exe]`) and the Tauri externalBin
+/// triple-suffixed name (`llama-server-{triple}[.exe]`).
+fn resolve_llama_server(app: &AppHandle) -> Option<PathBuf> {
+    let names = candidate_binary_names();
+
+    for name in &names {
+        // 1. resource_dir — where Tauri places externalBin in production bundles
+        if let Ok(dir) = app.path().resource_dir() {
+            let candidate = dir.join(name);
             if candidate.exists() {
                 return Some(candidate);
             }
         }
-    }
 
-    // 3. src-tauri/binaries/ — works during `tauri dev`
-    if let Ok(exe) = std::env::current_exe() {
-        // Walk up from the exe to find the workspace root heuristically
-        let mut dir = exe.parent().map(Path::to_path_buf);
-        for _ in 0..8 {
-            if let Some(d) = dir {
-                let candidate = d.join("binaries").join(&name);
+        // 2. Same directory as the running exe (production on some platforms)
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(dir) = exe.parent() {
+                let candidate = dir.join(name);
                 if candidate.exists() {
                     return Some(candidate);
                 }
-                dir = d.parent().map(Path::to_path_buf);
-            } else {
-                break;
+            }
+        }
+
+        // 3. src-tauri/binaries/ — works during `tauri dev`
+        if let Ok(exe) = std::env::current_exe() {
+            let mut dir = exe.parent().map(Path::to_path_buf);
+            for _ in 0..8 {
+                if let Some(d) = dir {
+                    let candidate = d.join("binaries").join(name);
+                    if candidate.exists() {
+                        return Some(candidate);
+                    }
+                    dir = d.parent().map(Path::to_path_buf);
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -99,6 +158,11 @@ fn spawn_llama_server(
     gpu_layers: u32,
     dylib_dirs: &[PathBuf],
 ) -> Result<Child, String> {
+    // Remove macOS quarantine attribute (downloaded binaries are blocked otherwise)
+    // and ensure the execute bit is set (WSL2 / network filesystem quirks).
+    clear_quarantine(binary);
+    ensure_executable(binary);
+
     let mut cmd = Command::new(binary);
     cmd.args([
         "--model",
@@ -137,7 +201,8 @@ fn spawn_llama_server(
     }
 
     suppress_console(&mut cmd);
-    cmd.spawn().map_err(|e| format!("Failed to spawn llama-server: {e}"))
+    cmd.spawn()
+        .map_err(|e| format!("Failed to spawn llama-server at {}: {e}", binary.display()))
 }
 
 /// Poll until the server's TCP port accepts a connection or we time out.
