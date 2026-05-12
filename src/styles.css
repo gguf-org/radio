@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #060b14;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #060b14;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body {
+  background: #f3f6f8;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.clinical-shell {
+  letter-spacing: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 13, 21, 0.98), rgba(5, 7, 11, 1));
+}
+
+.clinical-shell button,
+.clinical-shell input,
+.clinical-shell textarea {
+  letter-spacing: 0;
+}
+
+.clinical-shell header {
+  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.03);
+}
+
+.clinical-shell article,
+.clinical-shell aside,
+.clinical-shell section {
+  background-clip: padding-box;
+}
+
+.theme-switcher {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme="light"] .clinical-shell {
+  background: linear-gradient(180deg, #f7fafb 0%, #eef3f6 100%) !important;
+  color: #21303d !important;
+}
+
+html[data-theme="light"] .clinical-shell .bg-\[\#05070b\],
+html[data-theme="light"] .clinical-shell .bg-\[\#070b12\],
+html[data-theme="light"] .clinical-shell .bg-\[\#080d15\],
+html[data-theme="light"] .clinical-shell .bg-\[\#090f18\] {
+  background-color: #f6f9fa !important;
+}
+
+html[data-theme="light"] .clinical-shell .bg-\[\#0c1420\],
+html[data-theme="light"] .clinical-shell .bg-slate-950,
+html[data-theme="light"] .clinical-shell .bg-slate-950\/45,
+html[data-theme="light"] .clinical-shell .bg-slate-950\/50 {
+  background-color: #ffffff !important;
+}
+
+html[data-theme="light"] .clinical-shell .bg-black,
+html[data-theme="light"] .clinical-shell .bg-black\/45 {
+  background-color: #0b1117 !important;
+}
+
+html[data-theme="light"] .clinical-shell .bg-black\/62 {
+  background-color: rgba(15, 23, 42, 0.36) !important;
+}
+
+html[data-theme="light"] .clinical-shell .border-slate-800,
+html[data-theme="light"] .clinical-shell .border-slate-700 {
+  border-color: #d4dde4 !important;
+}
+
+html[data-theme="light"] .clinical-shell .hover\:border-slate-600:hover,
+html[data-theme="light"] .clinical-shell .hover\:border-slate-500:hover {
+  border-color: #91a4b4 !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-white,
+html[data-theme="light"] .clinical-shell .text-slate-100,
+html[data-theme="light"] .clinical-shell .text-slate-200,
+html[data-theme="light"] .clinical-shell .text-slate-300 {
+  color: #1d2b36 !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-slate-400 {
+  color: #526372 !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-slate-500,
+html[data-theme="light"] .clinical-shell .text-slate-600 {
+  color: #6b7d8a !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-cyan-100,
+html[data-theme="light"] .clinical-shell .text-cyan-200 {
+  color: #075f73 !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-emerald-300 {
+  color: #047857 !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-amber-300,
+html[data-theme="light"] .clinical-shell .text-amber-200,
+html[data-theme="light"] .clinical-shell .text-amber-100 {
+  color: #9a5b00 !important;
+}
+
+html[data-theme="light"] .clinical-shell .text-red-300,
+html[data-theme="light"] .clinical-shell .text-red-200 {
+  color: #b42318 !important;
+}
+
+html[data-theme="light"] .clinical-shell .bg-cyan-400\/10,
+html[data-theme="light"] .clinical-shell .bg-cyan-400\/15 {
+  background-color: #e4f4f7 !important;
+}
+
+html[data-theme="light"] .clinical-shell .border-cyan-400\/25,
+html[data-theme="light"] .clinical-shell .border-cyan-300\/40,
+html[data-theme="light"] .clinical-shell .border-cyan-300\/45 {
+  border-color: #8bc9d6 !important;
+}
+
+html[data-theme="light"] .clinical-shell .shadow-active-glow {
+  box-shadow: 0 0 0 1px rgba(14, 116, 144, 0.12), 0 14px 36px rgba(51, 65, 85, 0.12) !important;
+}
+
+html[data-theme="light"] .clinical-shell .shadow-panel-soft {
+  box-shadow: 0 24px 70px rgba(30, 41, 59, 0.16) !important;
+}
+
+html[data-theme="light"] .clinical-shell input:not([type="range"]),
+html[data-theme="light"] .clinical-shell textarea {
+  background-color: #ffffff !important;
+  color: #1d2b36 !important;
+  border-color: #cbd8e0 !important;
+}
+
+html[data-theme="light"] .clinical-shell input::placeholder,
+html[data-theme="light"] .clinical-shell textarea::placeholder {
+  color: #8b9aa5 !important;
+}
+
+.medical-scan {
+  background:
+    radial-gradient(ellipse at 50% 70%, rgba(248, 250, 252, 0.78) 0 9%, transparent 10%),
+    radial-gradient(ellipse at 42% 57%, rgba(235, 242, 248, 0.66) 0 15%, transparent 16%),
+    radial-gradient(ellipse at 58% 57%, rgba(235, 242, 248, 0.64) 0 15%, transparent 16%),
+    radial-gradient(ellipse at 42% 55%, rgba(13, 20, 30, 0.72) 0 10%, transparent 11%),
+    radial-gradient(ellipse at 58% 55%, rgba(13, 20, 30, 0.72) 0 10%, transparent 11%),
+    radial-gradient(ellipse at 50% 32%, rgba(226, 232, 240, 0.72) 0 5%, transparent 6%),
+    linear-gradient(90deg, transparent 0 49.1%, rgba(226, 232, 240, 0.7) 49.35% 50.65%, transparent 50.9%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 12px),
+    radial-gradient(ellipse at center, #111827 0 22%, #05070d 46%, #000 80%);
+  filter: contrast(1.08) brightness(0.9) grayscale(1);
+}
+
+.medical-scan::before,
+.medical-scan::after {
+  position: absolute;
+  content: "";
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.medical-scan::before {
+  inset: 14% 25% 9%;
+  border: 16px solid rgba(238, 245, 252, 0.28);
+  box-shadow:
+    inset 0 0 34px rgba(255, 255, 255, 0.2),
+    0 0 80px rgba(147, 197, 253, 0.12);
+}
+
+.medical-scan::after {
+  left: 36%;
+  top: 28%;
+  width: 30%;
+  height: 48%;
+  border: 9px solid rgba(226, 232, 240, 0.22);
+  border-left-color: rgba(248, 250, 252, 0.38);
+  border-right-color: rgba(248, 250, 252, 0.38);
+}

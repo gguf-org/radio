@@ -1,0 +1,18 @@
+# Place the llama-server binary and dylibs here before building.
+#
+# Download pre-built binaries from:
+#   https://github.com/ggerganov/llama.cpp/releases
+#
+# macOS Apple Silicon (current setup):
+#   1. Download llama-b*-bin-macos-arm64-kleidiai.tar.gz
+#   2. Run: python3 scripts/extract-macos-binaries.py
+#      (or manually extract llama-server + all *.dylib files)
+#   3. Rename: llama-server -> llama-server-aarch64-apple-darwin
+#
+# Other platforms:
+#   Windows x64 : llama-server-x86_64-pc-windows-msvc.exe
+#   macOS Intel  : llama-server-x86_64-apple-darwin
+#   Linux x64    : llama-server-x86_64-unknown-linux-gnu
+#
+# To find the target triple of your current machine, run:
+#   rustc -vV | grep host
