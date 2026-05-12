@@ -6,50 +6,27 @@ An offline-capable AI radiology workstation built with **Tauri 2**, **React 19**
 
 ## Architecture
 
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                        Radiology Desktop                           │
-│                                                                    │
-│  ┌──────────────┐   ┌──────────────────────┐   ┌────────────────┐  │
-│  │  StudyPanel  │   │   ViewerWorkspace    │   │ DecisionPanel  │  │
-│  │              │   │                      │   │                │  │
-│  │  - Upload    │   │  - Image viewport    │   │  - AI Report   │  │
-│  │  - Study     │   │  - ROI drawing       │   │  - Findings    │  │
-│  │    list      │   │  - Seg overlay       │   │  - Impression  │  │
-│  │  - Accept/   │   │  - Zoom/Brightness   │   │  - Recommend.  │  │
-│  │    Note      │   │  - 3D preview        │   │  - Seg masks   │  │
-│  └──────────────┘   │  - Undo/Redo/Clear   │   │  - Confidence  │  │
-│                     └──────────┬───────────┘   │  - Token usage │  │
-│                                │               └───────┬────────┘  │
-│                                │                       │           │
-│                     ┌──────────▼───────────────────────▼────────┐  │
-│                     │         React State (App.tsx)             │  │
-│                     │  - studies[], apiSettings, localAi,       │  │
-│                     │    undoStacks, redoStacks, llmStatus      │  │
-│                     └──────────────────┬────────────────────────┘  │
-│                                        │                           │
-│              ┌─────────────────────────┼──────────────────────┐    │
-│              │                         │                      │    │
-│    ┌─────────▼──────────┐    ┌─────────▼────────┐             │    │
-│    │  Tauri Commands    │    │  HTTP /v1 API    │             │    │
-│    │  (invoke)          │    │  (fetch)         │             │    │
-│    └─────────┬──────────┘    └────────┬─────────┘             │    │
-│              │                        │                       │    │
-└──────────────┼────────────────────────┼───────────────────────┘────┘
-               │                        │                            
-    ┌──────────▼──────────┐   ┌─────────▼─────────────┐              
-    │   Rust Backend      │   │   llama-server        │              
-    │   (src-tauri/)      │   │   (sidecar process)   │              
-    │                     │   │                       │              
-    │  - spawn/kill       │──▶│  /v1/chat/completions │              
-    │  - health poll      │   │  /v1/models           │              
-    │  - path resolution  │   │  GGUF + mmproj        │              
-    │  - window lifecycle │   │  GPU layers (Metal)   │              
-    └─────────────────────┘   └───────────────────────┘              
-                                                                     
-    ┌────────────────────────────────────────────────────────────────┐
-    │  Bundled dylibs: libggml, libllama, libllama-common, libmtmd   │ 
-    └────────────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart LR
+  User[User] --> UI[State UI]
+  UI --> StudyPanel[StudyPanel]
+  UI --> Viewer[ViewerWorkspace]
+  UI --> DecisionPanel[DecisionPanel]
+  UI --> Settings[Settings Modal for API/GPU/Tokens]
+
+  Settings --> Storage[localStorage]
+  UI --> Storage
+
+  UI --> StudyAPI[Study Backend API]
+  StudyAPI --> Upload[POST /studies]
+  StudyAPI --> Segmentation[POST /studies/:id/segmentations/med-model]
+
+  UI --> ModelAPI[OpenAI-compatible Model API]
+  ModelAPI --> Models[GET /models]
+  ModelAPI --> Chat[POST /chat/completions]
+
+  UI --> Fallback[Local Mock Fallbacks]
 ```
 
 ---
@@ -94,6 +71,43 @@ radiology-desktop/
 ---
 
 ## Workflow
+
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant App
+  participant Backend
+  participant Model
+
+  User->>App: Upload DICOM or image
+  App->>Backend: POST /studies
+  alt Backend available
+    Backend-->>App: Study metadata and preview URL
+  else Backend unavailable
+    App-->>App: Build local fallback study
+  end
+
+  User->>App: Draw ROI or run segmentation
+  App->>Backend: POST /studies/:id/segmentations/med-model
+  alt Segmentation API available
+    Backend-->>App: Segmentation mask metadata
+  else API unavailable
+    App-->>App: Add mock segmentation
+  end
+
+  User->>App: Generate report
+  App->>Model: POST /chat/completions
+  alt Model available
+    Model-->>App: Structured report JSON
+  else Model unavailable
+    App-->>App: Show unavailable report state
+  end
+
+  User->>App: Accept draft or mark needs correction/note
+```
+
+## Tree Diagram
 
 ```
  1. LAUNCH
@@ -213,6 +227,29 @@ radiology-desktop/
 | Build | **Vite 7** |
 | AI inference | **llama.cpp** (llama-server sidecar, ~v0.9113) |
 | Vision | **libmtmd** (multimodal encoder for MedGemma-style models) |
+
+---
+
+## Layout
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  MedTrace AI - Radiology Workflow Dashboard              │
+├────────────┬──────────────────────────┬──────────────────┤
+│  [Upload]  │  [Seg] [👁] [↩] [↪] [x] │  Model/Status    │
+│  Studies   │  ┌──────────────────────┐│  Draft Report    │
+│            │  │                      ││                  │
+│  ▸ Study 1 │  │   DICOM Viewport     ││  Confidence: 85% │
+│  ▸ Study 2 │  │   + ROI Drawing      ││                  │
+│  ▸ Study 3 │  │   + Seg Overlay      ││  Findings: ...   │
+│            │  │                      ││  Impression: ... │
+│            │  └──────────────────────┘│  Recs: ...       │
+│  [Accept]  │  Brightness [━━━━]       │                  │
+│   [Note]   │  Zoom       [━━━━]       │  (Hidden Dialog) │
+├────────────┴──────────────────────────┴──────────────────┤
+│  Ctrl+Z Undo  |  Ctrl+Y Redo  |  ROI: drag on viewport   │
+└──────────────────────────────────────────────────────────┘
+```
 
 ---
 
