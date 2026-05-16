@@ -2,7 +2,7 @@
 
 An offline-capable AI radiology workstation built with **Tauri 2**, **React 19**, and **llama.cpp**. Upload DICOM or medical images, draw ROIs for segmentation, and generate structured radiology reports using a locally-running vision-language model -- no cloud dependency required.
 
----
+![screenshot](https://raw.githubusercontent.com/gguf-org/radio/master/demo.gif)
 
 ## Architecture
 
